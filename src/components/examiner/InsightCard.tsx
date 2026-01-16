@@ -28,7 +28,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
         isActive
           ? highlight.type === 'positive'
             ? "border-mint-solid shadow-[0_4px_20px_-4px_rgba(34,197,94,0.3)] scale-[1.02] z-10"
-            : "border-coral-solid shadow-[0_4px_20px_-4px_rgba(244,63,94,0.3)] scale-[1.02] z-10"
+            : highlight.type === 'negative'
+                ? "border-coral-solid shadow-[0_4px_20px_-4px_rgba(244,63,94,0.3)] scale-[1.02] z-10"
+                : "border-amber-solid shadow-[0_4px_20px_-4px_rgba(245,158,11,0.3)] scale-[1.02] z-10"
           : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
       )}
       onMouseEnter={() => setActiveHighlightId(highlight.id)}
@@ -37,7 +39,8 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
       {/* Left colored strip */}
       <div className={clsx(
           "absolute left-0 top-0 bottom-0 w-1",
-          highlight.type === 'positive' ? "bg-mint-solid" : "bg-coral-solid"
+          highlight.type === 'positive' ? "bg-mint-solid" : 
+          highlight.type === 'negative' ? "bg-coral-solid" : "bg-amber-solid"
       )} />
 
       <div className="flex items-center justify-between mb-3 pl-2">
@@ -46,7 +49,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
             "text-xs font-bold px-2 py-0.5 rounded-full border",
             highlight.type === 'positive' 
                 ? "bg-mint-glaze text-green-800 border-green-200" 
-                : "bg-coral-wash text-red-800 border-red-200"
+                : highlight.type === 'negative'
+                    ? "bg-coral-wash text-red-800 border-red-200"
+                    : "bg-amber-glaze text-amber-800 border-amber-200"
           )}>
             #{highlight.id}
           </span>

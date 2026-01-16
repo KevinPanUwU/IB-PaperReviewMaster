@@ -1,16 +1,7 @@
 import { AnalysisResult } from '../types';
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const MODEL = "google/gemini-2.0-flash-exp"; // Using a known supported model on OpenRouter or the one requested if available. 
-// The user asked for "google/gemini-3-pro-preview". I will use that, but fallback to flash if it fails or if I should be safe.
-// Actually, let's use the one requested.
-const REQUESTED_MODEL = "google/gemini-2.0-flash-thinking-exp-1219"; // "google/gemini-3-pro-preview" might not be exact slug. 
-// Checking common OpenRouter slugs... "google/gemini-pro-1.5" etc. 
-// The user specifically said "google/gemini-3-pro-preview". I will use exactly that.
-const TARGET_MODEL = "google/gemini-2.0-flash-thinking-exp-1219"; // I'll stick to a known working one or the user's exact string if I trust it.
-// User said: "google/gemini-3-pro-preview". I will use it.
-// Wait, "gemini-3" doesn't exist yet publicly as of my knowledge cutoff, but maybe it does in this future context (2026).
-// I will use the user's string.
+const MODEL = "google/gemini-3-flash-preview";
 
 export const SYSTEM_PROMPT = `You are an expert International Baccalaureate Examiner. You are known for strict, criterion-referenced grading.
 Input:
@@ -36,7 +27,7 @@ You must respond ONLY in a valid JSON format with the following structure:
     {
       "id": 1,
       "quote": "text verbatim from document to match",
-      "type": "positive", // or "negative"
+      "type": "positive", // or "negative" or "neutral"
       "criterion_related": "Criterion B",
       "feedback": "This analysis of the algorithm demonstrates high-level understanding...",
       "suggestion": "None" // or specific improvement
@@ -47,6 +38,7 @@ You must respond ONLY in a valid JSON format with the following structure:
 Rules:
 - 'Positive' highlights must be examples of perfect execution.
 - 'Negative' highlights must be errors in logic, citation, or rubric failures.
+- 'Neutral' highlights (Yellow) are for parts that are okay but "could be better" or need minor refinement.
 - Be harsh but constructive.
 - Ensure the 'quote' field matches the text in the document EXACTLY so it can be highlighted.`;
 
@@ -67,7 +59,7 @@ export async function analyzePaper(paperText: string, rubricText: string): Promi
         "X-Title": "IB Paper Review Master",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-pro-preview",
+        model: MODEL,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `RUBRIC:\n${rubricText}\n\nSTUDENT PAPER:\n${paperText}` }
@@ -101,5 +93,55 @@ export async function analyzePaper(paperText: string, rubricText: string): Promi
   } catch (error) {
     console.error("Analysis failed:", error);
     throw error;
+  }
+}
+
+export async function cleanText(rawText: string): Promise<string> {
+  if (!API_KEY) throw new Error("Missing API Key");
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:5173",
+        "X-Title": "IB Paper Review Master",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { 
+            role: "system", 
+            content: `You are an expert text editor. Your task is to rewrite the provided text to fix all formatting issues caused by PDF extraction.
+
+CRITICAL INSTRUCTIONS:
+1. Remove ALL spaces between Chinese characters. (e.g., "那 团" -> "那团").
+2. Merge broken lines and paragraphs into coherent blocks of text.
+3. Remove unnecessary spaces in English text (e.g., "wo rd" -> "word").
+4. Preserve the original meaning and content exactly, but you MUST rewrite the formatting to be sensible and clean.
+5. Output ONLY the cleaned text.` 
+          },
+          { role: "user", content: rawText }
+        ]
+      })
+    });
+
+    if (!response.ok) throw new Error("API Error");
+    const data = await response.json();
+    let cleaned = data.choices[0].message.content;
+
+    // Post-processing: Aggressively remove spaces between CJK characters
+    // Using a broader range for CJK characters including punctuation and extensions
+    const cjk = /([\u3000-\u303F\u4E00-\u9FFF\uFF00-\uFFEF])\s+([\u3000-\u303F\u4E00-\u9FFF\uFF00-\uFFEF])/g;
+    
+    // Run multiple times to handle overlapping matches (e.g. "A B C")
+    cleaned = cleaned.replace(cjk, '$1$2');
+    cleaned = cleaned.replace(cjk, '$1$2');
+
+    return cleaned;
+  } catch (error) {
+    console.error("Text cleaning failed:", error);
+    return rawText; // Fallback to raw text
   }
 }

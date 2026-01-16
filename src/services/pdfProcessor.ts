@@ -1,11 +1,4 @@
 import { pdfjs } from 'react-pdf';
-// @ts-ignore
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
-
-// Ensure worker is set up
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
-}
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
@@ -25,8 +18,8 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     }
 
     return fullText;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting text from PDF:", error);
-    throw error;
+    return `Error reading PDF: ${error.message || "Unknown error"}`;
   }
 }

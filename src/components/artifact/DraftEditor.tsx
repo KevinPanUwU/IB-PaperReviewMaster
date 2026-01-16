@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Save, FileText, Image as ImageIcon } from 'lucide-react';
+import { Save, FileText, Image as ImageIcon, Wand2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { extractTextFromPDF } from '../../services/pdfProcessor';
+import { cleanText } from '../../services/llm';
 import { clsx } from 'clsx';
 
 export const DraftEditor: React.FC = () => {
@@ -25,6 +26,19 @@ export const DraftEditor: React.FC = () => {
         } finally {
             setIsProcessing(false);
         }
+    }
+  };
+
+  const handleCleanup = async () => {
+    if (!draftText) return;
+    setIsProcessing(true);
+    try {
+        const cleaned = await cleanText(draftText);
+        setDraftText(cleaned);
+    } catch (error) {
+        console.error("Cleanup failed", error);
+    } finally {
+        setIsProcessing(false);
     }
   };
 
@@ -102,13 +116,25 @@ export const DraftEditor: React.FC = () => {
                 </div>
             </div>
 
-            <button 
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors shadow-sm text-sm"
-            >
-                <Save className="w-4 h-4" />
-                Save & Update
-            </button>
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={handleCleanup}
+                    disabled={isProcessing || !draftText}
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition-colors shadow-sm text-sm"
+                    title="Fix formatting and spacing with AI"
+                >
+                    <Wand2 className="w-4 h-4" />
+                    Cleanup
+                </button>
+
+                <button 
+                    onClick={handleSave}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors shadow-sm text-sm"
+                >
+                    <Save className="w-4 h-4" />
+                    Save & Update
+                </button>
+            </div>
         </div>
         
         <div className="flex-1 relative">
@@ -116,7 +142,7 @@ export const DraftEditor: React.FC = () => {
                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-3">
                         <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-gray-800 rounded-full" />
-                        <p className="text-gray-600 font-medium">Extracting text...</p>
+                        <p className="text-gray-600 font-medium">Processing text...</p>
                     </div>
                 </div>
             )}

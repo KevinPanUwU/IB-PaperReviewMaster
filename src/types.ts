@@ -1,7 +1,7 @@
 export interface Highlight {
   id: number;
   quote: string;
-  type: 'positive' | 'negative';
+  type: 'positive' | 'negative' | 'neutral';
   criterion_related: string;
   feedback: string;
   suggestion: string;

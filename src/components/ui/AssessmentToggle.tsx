@@ -7,14 +7,15 @@ import { extractRubricText } from '../../services/rubricProcessor';
 import { extractTextFromPDF } from '../../services/pdfProcessor';
 
 export const AssessmentToggle: React.FC = () => {
-  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText } = useAppStore();
+  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText, analyzedText, setAnalyzedText } = useAppStore();
 
   const handleExaminerMode = async () => {
     if (viewMode === 'examiner') return;
     
     setViewMode('examiner');
     
-    if (!analysisResult) {
+    // Re-analyze if no result OR if the text has changed since last analysis
+    if (!analysisResult || draftText !== analyzedText) {
         setIsAnalyzing(true);
         try {
             let rubricText = "Standard IB Rubric";
@@ -33,6 +34,7 @@ export const AssessmentToggle: React.FC = () => {
 
             const result = await analyzePaper(paperText, rubricText);
             setAnalysisResult(result);
+            setAnalyzedText(paperText);
         } catch (error) {
             console.error("Analysis failed", error);
         } finally {
@@ -52,6 +54,7 @@ export const AssessmentToggle: React.FC = () => {
         
         const result = await analyzePaper(draftText, rubricText);
         setAnalysisResult(result);
+        setAnalyzedText(draftText);
     } catch (error) {
         console.error("Re-analysis failed", error);
     } finally {

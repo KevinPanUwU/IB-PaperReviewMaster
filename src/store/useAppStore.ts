@@ -9,6 +9,7 @@ interface AppState {
   activeHighlightId: number | null;
   isAnalyzing: boolean;
   draftText: string;
+  analyzedText: string | null;
 
   setPdfFile: (file: File | null) => void;
   setRubricFile: (file: File | null) => void;
@@ -17,6 +18,7 @@ interface AppState {
   setActiveHighlightId: (id: number | null) => void;
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   setDraftText: (text: string) => void;
+  setAnalyzedText: (text: string | null) => void;
   reset: () => void;
 }
 
@@ -28,6 +30,7 @@ export const useAppStore = create<AppState>((set) => ({
   activeHighlightId: null,
   isAnalyzing: false,
   draftText: "",
+  analyzedText: null,
 
   setPdfFile: (file) => set({ pdfFile: file }),
   setRubricFile: (file) => set({ rubricFile: file }),
@@ -36,6 +39,7 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveHighlightId: (id) => set({ activeHighlightId: id }),
   setIsAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
   setDraftText: (text) => set({ draftText: text }),
+  setAnalyzedText: (text) => set({ analyzedText: text }),
   reset: () => set({
     pdfFile: null,
     rubricFile: null,
@@ -43,6 +47,7 @@ export const useAppStore = create<AppState>((set) => ({
     analysisResult: null,
     activeHighlightId: null,
     isAnalyzing: false,
-    draftText: ""
+    draftText: "",
+    analyzedText: null
   }),
 }));
