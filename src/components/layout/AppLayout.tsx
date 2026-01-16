@@ -3,15 +3,11 @@ import { useAppStore } from '../../store/useAppStore';
 import { UploadZone } from '../ui/UploadZone';
 import { AssessmentToggle } from '../ui/AssessmentToggle';
 import { ExaminerSidebar } from '../examiner/ExaminerSidebar';
-import { DocumentViewer } from '../artifact/DocumentViewer';
+import { ArtifactTextViewer } from '../artifact/ArtifactTextViewer';
 import { DraftEditor } from '../artifact/DraftEditor';
 
 export const AppLayout: React.FC = () => {
-  const { pdfFile, rubricFile, viewMode } = useAppStore();
-
-  if (!pdfFile || !rubricFile) {
-    return <UploadZone />;
-  }
+  const { viewMode } = useAppStore();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-paper-white">
@@ -22,7 +18,7 @@ export const AppLayout: React.FC = () => {
 
       {/* Right Column: The Artifact (Remaining width) */}
       <div className="flex-1 h-full relative">
-        {viewMode === 'draft' ? <DraftEditor /> : <DocumentViewer />}
+        {viewMode === 'draft' ? <DraftEditor /> : <ArtifactTextViewer />}
         <AssessmentToggle />
       </div>
     </div>

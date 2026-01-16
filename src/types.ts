@@ -11,6 +11,7 @@ export interface CriterionScore {
   criterion: string;
   score: string;
   reasoning: string;
+  summary?: string; // Added summary
 }
 
 export interface AnalysisResult {

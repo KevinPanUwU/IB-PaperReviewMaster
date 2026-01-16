@@ -25,7 +25,12 @@ You must respond ONLY in a valid JSON format with the following structure:
 {
   "overall_grade": "X/Total",
   "criteria_breakdown": [
-    {"criterion": "A", "score": "X", "reasoning": "..."}
+    {
+      "criterion": "A", 
+      "score": "X", 
+      "reasoning": "Short reasoning...",
+      "summary": "Detailed summary (~100 words) explaining the performance against this criterion."
+    }
   ],
   "highlights": [
     {
