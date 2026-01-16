@@ -1,64 +1,68 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { clsx } from 'clsx';
-import { PenTool, GraduationCap, RotateCcw, RefreshCw } from 'lucide-react';
+import { PenTool, GraduationCap, RotateCcw, RefreshCw, Play } from 'lucide-react';
 import { analyzePaper } from '../../services/llm';
 import { extractRubricText } from '../../services/rubricProcessor';
 import { extractTextFromPDF } from '../../services/pdfProcessor';
 
 export const AssessmentToggle: React.FC = () => {
-  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText, analyzedText, setAnalyzedText } = useAppStore();
+  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText, analyzedText, setAnalyzedText, setError, setStatusMessage } = useAppStore();
+  const [loadingText, setLoadingText] = React.useState(".");
+
+  React.useEffect(() => {
+      if (isAnalyzing) {
+          const interval = setInterval(() => {
+              setLoadingText(prev => prev.length >= 3 ? "." : prev + ".");
+          }, 500);
+          return () => clearInterval(interval);
+      }
+  }, [isAnalyzing]);
 
   const handleExaminerMode = async () => {
     if (viewMode === 'examiner') return;
-    
     setViewMode('examiner');
-    
-    // Re-analyze if no result OR if the text has changed since last analysis
-    if (!analysisResult || draftText !== analyzedText) {
-        setIsAnalyzing(true);
-        try {
-            let rubricText = "Standard IB Rubric";
-            if (rubricFile) {
-                rubricText = await extractRubricText(rubricFile);
-            }
-
-            // Use draftText if available (it should be populated on upload)
-            let paperText = draftText;
-            if (!paperText && pdfFile) {
-                paperText = await extractTextFromPDF(pdfFile);
-            } else if (!paperText) {
-                console.warn("No text available");
-                paperText = "Mock Paper Text";
-            }
-
-            const result = await analyzePaper(paperText, rubricText);
-            setAnalysisResult(result);
-            setAnalyzedText(paperText);
-        } catch (error) {
-            console.error("Analysis failed", error);
-        } finally {
-            setIsAnalyzing(false);
-        }
-    }
+    // Auto-grading removed
   };
 
   const handleRegrade = async () => {
     if (isAnalyzing) return;
+
     setIsAnalyzing(true);
+    setStatusMessage("Initializing...");
+    setError(null);
+
     try {
         let rubricText = "Standard IB Rubric";
         if (rubricFile) {
+            setStatusMessage("Extracting rubric text...");
             rubricText = await extractRubricText(rubricFile);
         }
         
-        const result = await analyzePaper(draftText, rubricText);
+        // Use draftText if available, else extract from PDF
+        let paperText = draftText;
+        if (!paperText && pdfFile) {
+            setStatusMessage("Extracting paper text...");
+            paperText = await extractTextFromPDF(pdfFile);
+        } else if (!paperText) {
+            console.warn("No text available");
+            paperText = "Mock Paper Text";
+        }
+
+        if (paperText.startsWith("Error:")) {
+            throw new Error(paperText);
+        }
+
+        setStatusMessage("Analyzing with AI...");
+        const result = await analyzePaper(paperText, rubricText);
         setAnalysisResult(result);
-        setAnalyzedText(draftText);
-    } catch (error) {
-        console.error("Re-analysis failed", error);
+        setAnalyzedText(paperText);
+    } catch (error: any) {
+        console.error("Analysis failed:", error);
+        setError(error.message || "Analysis failed. Please try again.");
     } finally {
         setIsAnalyzing(false);
+        setStatusMessage(null);
     }
   };
 
@@ -89,23 +93,36 @@ export const AssessmentToggle: React.FC = () => {
           )}
         >
           <GraduationCap className="w-4 h-4" />
-          {isAnalyzing ? "Calibrating..." : "Examiner Mode"}
+          Examiner Mode
         </button>
       </div>
 
-      {analysisResult && (
-        <button
-            onClick={handleRegrade}
-            disabled={isAnalyzing}
-            className={clsx(
-                "bg-white shadow-lg rounded-full p-2.5 border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all",
-                isAnalyzing && "animate-spin opacity-50"
-            )}
-            title="Regrade (Re-evaluate)"
-        >
-            <RefreshCw className="w-5 h-5" />
-        </button>
-      )}
+      <button
+        onClick={handleRegrade}
+        disabled={isAnalyzing}
+        className={clsx(
+            "bg-white shadow-lg rounded-full p-2.5 border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2 px-4 min-w-[100px] justify-center",
+            isAnalyzing && "opacity-80 cursor-wait"
+        )}
+        title={analysisResult ? "Regrade" : "Grade"}
+      >
+        {isAnalyzing ? (
+            <span className="font-medium text-sm text-blue-600 animate-pulse">Grading{loadingText}</span>
+        ) : (
+            <>
+                {analysisResult ? <RefreshCw className="w-5 h-5" /> : <Play className="w-5 h-5 text-green-600" />}
+                <span className="font-medium text-sm hidden md:inline">{analysisResult ? "Regrade" : "Grade"}</span>
+            </>
+        )}
+      </button>
+
+      <button
+        onClick={reset}
+        className="bg-white shadow-lg rounded-full p-2.5 border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 transition-all"
+        title="Reset and Upload New Files"
+      >
+        <RotateCcw className="w-5 h-5" />
+      </button>
     </div>
   );
 };

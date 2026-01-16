@@ -10,6 +10,8 @@ interface AppState {
   isAnalyzing: boolean;
   draftText: string;
   analyzedText: string | null;
+  error: string | null;
+  statusMessage: string | null;
 
   setPdfFile: (file: File | null) => void;
   setRubricFile: (file: File | null) => void;
@@ -19,6 +21,8 @@ interface AppState {
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   setDraftText: (text: string) => void;
   setAnalyzedText: (text: string | null) => void;
+  setError: (error: string | null) => void;
+  setStatusMessage: (message: string | null) => void;
   reset: () => void;
 }
 
@@ -31,15 +35,19 @@ export const useAppStore = create<AppState>((set) => ({
   isAnalyzing: false,
   draftText: "",
   analyzedText: null,
+  error: null,
+  statusMessage: null,
 
   setPdfFile: (file) => set({ pdfFile: file }),
   setRubricFile: (file) => set({ rubricFile: file }),
   setViewMode: (mode) => set({ viewMode: mode }),
-  setAnalysisResult: (result) => set({ analysisResult: result }),
+  setAnalysisResult: (result) => set({ analysisResult: result, error: null, statusMessage: null }),
   setActiveHighlightId: (id) => set({ activeHighlightId: id }),
   setIsAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
   setDraftText: (text) => set({ draftText: text }),
   setAnalyzedText: (text) => set({ analyzedText: text }),
+  setError: (error) => set({ error, statusMessage: null }),
+  setStatusMessage: (message) => set({ statusMessage: message }),
   reset: () => set({
     pdfFile: null,
     rubricFile: null,
@@ -48,6 +56,8 @@ export const useAppStore = create<AppState>((set) => ({
     activeHighlightId: null,
     isAnalyzing: false,
     draftText: "",
-    analyzedText: null
+    analyzedText: null,
+    error: null,
+    statusMessage: null
   }),
 }));

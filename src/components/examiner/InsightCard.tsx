@@ -12,6 +12,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
   const { activeHighlightId, setActiveHighlightId } = useAppStore();
   const isActive = activeHighlightId === highlight.id;
   const cardRef = useRef<HTMLDivElement>(null);
+  const type = highlight.type.toLowerCase();
 
   useEffect(() => {
     if (isActive && cardRef.current) {
@@ -26,32 +27,34 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
       className={clsx(
         "bg-white rounded-lg p-5 border transition-all duration-300 cursor-pointer relative overflow-hidden",
         isActive
-          ? highlight.type === 'positive'
+          ? type === 'positive'
             ? "border-mint-solid shadow-[0_4px_20px_-4px_rgba(34,197,94,0.3)] scale-[1.02] z-10"
-            : highlight.type === 'negative'
+            : type === 'negative'
                 ? "border-coral-solid shadow-[0_4px_20px_-4px_rgba(244,63,94,0.3)] scale-[1.02] z-10"
-                : "border-amber-solid shadow-[0_4px_20px_-4px_rgba(245,158,11,0.3)] scale-[1.02] z-10"
+                : "border-amber-500 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.3)] scale-[1.02] z-10"
           : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
       )}
       onMouseEnter={() => setActiveHighlightId(highlight.id)}
       onMouseLeave={() => setActiveHighlightId(null)}
     >
       {/* Left colored strip */}
-      <div className={clsx(
-          "absolute left-0 top-0 bottom-0 w-1",
-          highlight.type === 'positive' ? "bg-mint-solid" : 
-          highlight.type === 'negative' ? "bg-coral-solid" : "bg-amber-solid"
-      )} />
+      <div 
+        className="absolute left-0 top-0 bottom-0 w-1"
+        style={{ 
+            backgroundColor: type === 'positive' ? '#22c55e' : 
+                             type === 'negative' ? '#f43f5e' : '#f59e0b' 
+        }}
+      />
 
       <div className="flex items-center justify-between mb-3 pl-2">
         <div className="flex items-center gap-2">
           <span className={clsx(
             "text-xs font-bold px-2 py-0.5 rounded-full border",
-            highlight.type === 'positive' 
+            type === 'positive' 
                 ? "bg-mint-glaze text-green-800 border-green-200" 
-                : highlight.type === 'negative'
+                : type === 'negative'
                     ? "bg-coral-wash text-red-800 border-red-200"
-                    : "bg-amber-glaze text-amber-800 border-amber-200"
+                    : "bg-amber-100 text-amber-800 border-amber-200"
           )}>
             #{highlight.id}
           </span>
