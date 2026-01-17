@@ -1,13 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Save, FileText, Image as ImageIcon, Wand2 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
+import { FileText, Image as ImageIcon, Wand2 } from 'lucide-react';
 import { extractTextFromPDF } from '../../services/pdfProcessor';
 import { cleanText } from '../../services/llm';
 import { clsx } from 'clsx';
 
 export const DraftEditor: React.FC = () => {
-  const { draftText, setDraftText, setPdfFile, setRubricFile, pdfFile, rubricFile, analysisResult, activeHighlightId, setActiveHighlightId } = useAppStore();
+  const { draftText, setDraftText, setPdfFile, setRubricFile, pdfFile, rubricFile, analysisResult, activeHighlightId, setActiveHighlightId, selectedModel, setSelectedModel, highlightSource } = useAppStore();
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const rubricInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,7 +19,7 @@ export const DraftEditor: React.FC = () => {
       const mapping: number[] = [];
       for (let i = 0; i < text.length; i++) {
           const char = text[i];
-          if (/[^\s\p{P}\p{S}]/u.test(char)) {
+          if (/[\p{L}\p{N}]/u.test(char)) {
               clean.push(char.toLowerCase());
               mapping.push(i);
           }
@@ -90,8 +89,16 @@ export const DraftEditor: React.FC = () => {
           
           // We can just always update if not typing.
           editorRef.current.innerHTML = generateHtml();
+
+          // Scroll to active highlight if exists
+          if (activeHighlightId !== null && highlightSource === 'feedback') {
+              const element = editorRef.current.querySelector(`[data-highlight-id="${activeHighlightId}"]`);
+              if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+          }
       }
-  }, [draftText, analysisResult, activeHighlightId]);
+  }, [draftText, analysisResult, activeHighlightId, highlightSource]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
       isTypingRef.current = true;
@@ -106,7 +113,7 @@ export const DraftEditor: React.FC = () => {
   const handleMouseOver = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
       const id = target.getAttribute('data-highlight-id');
-      if (id) setActiveHighlightId(parseInt(id));
+      if (id) setActiveHighlightId(parseInt(id), 'document');
   };
   const handleMouseOut = () => setActiveHighlightId(null);
 
@@ -132,7 +139,7 @@ export const DraftEditor: React.FC = () => {
     if (!draftText) return;
     setIsProcessing(true);
     try {
-        const cleaned = await cleanText(draftText);
+        const cleaned = await cleanText(draftText, selectedModel);
         setDraftText(cleaned);
     } catch (error) {
         console.error("Cleanup failed", error);
@@ -146,31 +153,6 @@ export const DraftEditor: React.FC = () => {
     if (file) {
         setRubricFile(file);
     }
-  };
-
-  const handleSave = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
-    const maxLineWidth = pageWidth - (margin * 2);
-    const splitText = doc.splitTextToSize(draftText, maxLineWidth);
-    let cursorY = margin;
-    const lineHeight = 7;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    
-    splitText.forEach((line: string) => {
-        if (cursorY + lineHeight > pageHeight - margin) {
-            doc.addPage();
-            cursorY = margin;
-        }
-        doc.text(line, margin, cursorY);
-        cursorY += lineHeight;
-    });
-
-    const pdfBlob = doc.output('blob');
-    const file = new File([pdfBlob], "edited-work.pdf", { type: "application/pdf" });
-    setPdfFile(file);
-    doc.save("edited-work.pdf");
   };
 
   return (
@@ -212,13 +194,15 @@ export const DraftEditor: React.FC = () => {
                     <Wand2 className="w-4 h-4" />
                     Cleanup
                 </button>
-                <button 
-                    onClick={handleSave}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors shadow-sm text-sm"
+                <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm text-sm max-w-[200px]"
                 >
-                    <Save className="w-4 h-4" />
-                    Save & Update
-                </button>
+                    <option value="google/gemini-3-pro-preview">Gemini 3 Pro</option>
+                    <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
+                    <option value="xiaomi/mimo-v2-flash:free">Mimo V2 Flash</option>
+                </select>
             </div>
         </div>
         

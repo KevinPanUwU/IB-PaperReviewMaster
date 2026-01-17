@@ -1,17 +1,15 @@
 import { AnalysisResult } from '../types';
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-// User requested "gemini 3.0 flash", assuming they mean the latest Flash model available.
-// Falling back to 2.0 Flash as 3.0 might not be available/valid slug yet.
-const MODEL = "google/gemini-3-flash-preview"; 
 
+//Do not change the SYSTEM_PROMPT at all. This is critical to ensure proper operation.
 export const SYSTEM_PROMPT = `You are an expert International Baccalaureate Examiner. You are known for strict, criterion-referenced grading.
 Input:
 - The Student's Essay text.
 - The Assessment Rubric text.
 
 Task:
-Analyze the text strictly against the rubric. You will identify specific sentences that either meet a standard or fail a standard. You should be identifying about 3-4 highlights per 400 words. You don't have try to equalize the amount of highlights for positive, negative or neutral.
+Analyze the text strictly against the rubric. You will identify specific sentences that relates to a standard, either failing it or supporting it. You should be identifying about 2-5 highlights per subpoint of a criterion, depending on the length of the text, this means that if there are 3 subpoint in an criteria, you should identify 6-15 highlights total for that criterion. You don't have try to equalize the amount of highlights for positive, negative or neutral.
 
 Output Format:
 You must respond ONLY in a valid JSON format with the following structure:
@@ -41,10 +39,13 @@ Rules:
 - 'Positive' highlights must be examples of good execution.
 - 'Negative' highlights must be errors in logic, citation, gone off topic, or rubric failures.
 - 'Neutral' highlights (Yellow) are for parts that are okay but "could be better" or need minor refinement, like incomplete explanations or weak evidence, or misplaced paragraphs.
+- You don't have to limit the length of the highlight quotes, but they should be relevant to the point being made. E.g. If you need it to be a whole paragraph to point out good execution, you are allowed to do so.
 - Be objective, critical but constructive. You are not trying to please the student or critique them; you are providing an honest assessment.
+- You can be stricter than a human examiner if the paper is subpar, to help them grow. But the grading should still be fair.
+- Very importantly, examine the logic and check the authenicity of the data (if provided), check if they might be fake or miscalculated, or data between essays don't match.
 - Ensure the 'quote' field matches the text in the document EXACTLY so it can be highlighted.`;
 
-export async function analyzePaper(paperText: string, rubricText: string): Promise<AnalysisResult> {
+export async function analyzePaper(paperText: string, rubricText: string, model: string): Promise<AnalysisResult> {
   if (!API_KEY) {
     throw new Error("API Key is missing. Please ensure VITE_OPENROUTER_API_KEY is set in .env file.");
   }
@@ -62,7 +63,7 @@ export async function analyzePaper(paperText: string, rubricText: string): Promi
         "X-Title": "IB Paper Review Master",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `RUBRIC:\n${rubricText}\n\nSTUDENT PAPER:\n${paperText}` }
@@ -111,7 +112,7 @@ export async function analyzePaper(paperText: string, rubricText: string): Promi
   }
 }
 
-export async function cleanText(rawText: string): Promise<string> {
+export async function cleanText(rawText: string, model: string): Promise<string> {
   if (!API_KEY) throw new Error("Missing API Key");
 
   const controller = new AbortController();
@@ -127,7 +128,7 @@ export async function cleanText(rawText: string): Promise<string> {
         "X-Title": "IB Paper Review Master",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: model,
         messages: [
           { 
             role: "system", 

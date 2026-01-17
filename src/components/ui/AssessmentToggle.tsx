@@ -7,7 +7,7 @@ import { extractRubricText } from '../../services/rubricProcessor';
 import { extractTextFromPDF } from '../../services/pdfProcessor';
 
 export const AssessmentToggle: React.FC = () => {
-  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText, analyzedText, setAnalyzedText, setError, setStatusMessage } = useAppStore();
+  const { viewMode, setViewMode, isAnalyzing, setIsAnalyzing, setAnalysisResult, analysisResult, rubricFile, pdfFile, reset, draftText, analyzedText, setAnalyzedText, setError, setStatusMessage, selectedModel } = useAppStore();
   const [loadingText, setLoadingText] = React.useState(".");
 
   React.useEffect(() => {
@@ -54,7 +54,7 @@ export const AssessmentToggle: React.FC = () => {
         }
 
         setStatusMessage("Analyzing with AI...");
-        const result = await analyzePaper(paperText, rubricText);
+        const result = await analyzePaper(paperText, rubricText, selectedModel);
         setAnalysisResult(result);
         setAnalyzedText(paperText);
     } catch (error: any) {

@@ -14,16 +14,11 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const type = highlight.type.toLowerCase();
 
-  useEffect(() => {
-    if (isActive && cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [isActive]);
-
   return (
     <motion.div
       ref={cardRef}
       layoutId={`card-${highlight.id}`}
+      data-highlight-id={highlight.id}
       className={clsx(
         "bg-white rounded-lg p-5 border transition-all duration-300 cursor-pointer relative overflow-hidden",
         isActive
@@ -34,7 +29,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ highlight }) => {
                 : "border-amber-500 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.3)] scale-[1.02] z-10"
           : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
       )}
-      onMouseEnter={() => setActiveHighlightId(highlight.id)}
+      onMouseEnter={() => setActiveHighlightId(highlight.id, 'feedback')}
       onMouseLeave={() => setActiveHighlightId(null)}
     >
       {/* Left colored strip */}

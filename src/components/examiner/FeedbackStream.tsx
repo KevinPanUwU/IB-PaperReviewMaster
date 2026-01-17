@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { InsightCard } from './InsightCard';
 import { Scorecard } from './Scorecard';
 
 export const FeedbackStream: React.FC = () => {
-  const { analysisResult, isAnalyzing, error, statusMessage } = useAppStore();
+  const { analysisResult, isAnalyzing, error, statusMessage, activeHighlightId, highlightSource } = useAppStore();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeHighlightId !== null && highlightSource === 'document' && scrollContainerRef.current) {
+      const element = scrollContainerRef.current.querySelector(`[data-highlight-id="${activeHighlightId}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeHighlightId, highlightSource]);
 
   if (isAnalyzing) {
     return (
@@ -27,7 +37,7 @@ export const FeedbackStream: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-[#F3F4F6]">
       <Scorecard />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
         {analysisResult.highlights.map((highlight) => (
           <InsightCard key={highlight.id} highlight={highlight} />
         ))}

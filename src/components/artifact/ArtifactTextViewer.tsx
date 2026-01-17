@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import DiffMatchPatch from 'diff-match-patch';
 
 export const ArtifactTextViewer: React.FC = () => {
-  const { draftText, setDraftText, analyzedText, analysisResult, activeHighlightId, setActiveHighlightId } = useAppStore();
+  const { draftText, setDraftText, analyzedText, analysisResult, activeHighlightId, setActiveHighlightId, highlightSource } = useAppStore();
   const editorRef = useRef<HTMLDivElement>(null);
   const [htmlContent, setHtmlContent] = useState('');
   const isTypingRef = useRef(false);
@@ -111,10 +111,20 @@ export const ArtifactTextViewer: React.FC = () => {
     setHtmlContent(html);
   }, [draftText, analyzedText, analysisResult, activeHighlightId, version]);
 
+  // Scroll to active highlight
+  useEffect(() => {
+    if (activeHighlightId !== null && highlightSource === 'feedback') {
+      const element = document.querySelector(`[data-highlight-id="${activeHighlightId}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeHighlightId, highlightSource]);
+
   const handleMouseOver = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
       const id = target.getAttribute('data-highlight-id');
-      if (id) setActiveHighlightId(parseInt(id));
+      if (id) setActiveHighlightId(parseInt(id), 'document');
   };
   const handleMouseOut = () => setActiveHighlightId(null);
 

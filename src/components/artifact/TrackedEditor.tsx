@@ -150,7 +150,7 @@ export const TrackedEditor: React.FC = () => {
   const handleMouseOver = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
       const id = target.getAttribute('data-highlight-id');
-      if (id) setActiveHighlightId(parseInt(id));
+      if (id) setActiveHighlightId(parseInt(id), 'document');
   };
   const handleMouseOut = () => setActiveHighlightId(null);
 
